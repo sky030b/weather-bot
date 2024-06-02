@@ -45,7 +45,6 @@ client.on('messageCreate', async (message) => {
     } else {
       messages[userId].push({bot: false, message: message.content});
     }
-    await fetchWeatherData();
     const botResponse =  analyzeMessageReturnWeather(message.content);
     sendMessageToDiscord(userId, botResponse)
     sendMessageToWebSocket(userId, message.content, message.author.globalName);

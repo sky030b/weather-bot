@@ -16,7 +16,6 @@ async function fetchWeatherData(locationName = '臺北市') {
         elementName: process.env.ELEMENT_NAME
       }
     });
-    console.log(response)
     weatherData = response.data.records.locations[0].location[0].weatherElement[0].time;
   } catch (error) {
     console.error("Error fetching weather data:", error);
@@ -131,10 +130,9 @@ function getReply(time = getNowTime(), attributes = ["weather", "rainProbability
 
 async function init() {
   await fetchWeatherData(locationName);
-  console.log(weatherData);
 }
 
-// init();
+init();
 
 // async function analyzeMessageReturnWeather(description) {
 function analyzeMessageReturnWeather(description) {
