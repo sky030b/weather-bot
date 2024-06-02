@@ -1,6 +1,7 @@
 const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
 const messageModel = require('../models/messageModel');
+const { uploadToDB, updateToDB, addUserToDB, updateUserToDB } = require('../models/uploadToDB');
 
 exports.handleConnection = (ws, wss) => {
     const userId = uuidv4(); // Generate a unique user ID
@@ -8,11 +9,13 @@ exports.handleConnection = (ws, wss) => {
 
     ws.send(JSON.stringify({ type: 'id', id: userId })); // Send the UUID to the client
 
-    ws.on('message', (message) => {
+    ws.on('message', async (message) => {
         const messageStr = message.toString(); // Convert buffer to string
         console.log('Received message:', messageStr); // Log received messages
         const chatMessage = messageModel.createMessage(messageStr, userId);
         broadcastMessage(chatMessage, wss);
+
+        await uploadToDB(chatMessage);
     });
 
     ws.on('error', (error) => {

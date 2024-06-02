@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 
 const uri = process.env.MONGODB_URI;
@@ -11,42 +11,140 @@ const client = new MongoClient(uri, {
   },
 });
 
-async function uploadToDB() {
-  try {
+let db;
+
+async function connectToDB() {
+  if (!db) {
     await client.connect();
-    const database = client.db("weather-bot-DB");
-    const collection = database.collection("weatherB");
+    db = client.db("weather-bot-DB")
+  }
+  return db;
+}
 
-    // 字符串
-    let result = await collection.insertOne({ value: "hello world" });
-    console.log(`Inserted string document with _id: ${result.insertedId}`);
+async function uploadToDB(message) {
+  try {
+    const database = await connectToDB();
 
-    // 整數
-    result = await collection.insertOne({ value: 42 });
-    console.log(`Inserted integer document with _id: ${result.insertedId}`);
+    // 動態地使用 userId 作為集合名稱，若不存在會自動建立
+    const collectionName = `user_${message.userId}`; // 確保變數名正確
+    const collection = database.collection(collectionName);
 
-    // 布爾值
-    result = await collection.insertOne({ value: true });
-    console.log(`Inserted boolean document with _id: ${result.insertedId}`);
-
-    // 雙精度浮點數
-    result = await collection.insertOne({ value: 3.14159 });
-    console.log(`Inserted double document with _id: ${result.insertedId}`);
-
-    // 日期
-    result = await collection.insertOne({ value: new Date() });
-    console.log(`Inserted date document with _id: ${result.insertedId}`);
-
-    // 數組
-    result = await collection.insertOne({
-      value: ["apple", "banana", "cherry"],
+    // 將時間、ID 和訊息內容存儲在不同的欄位中，如要加其他欄位再新增
+    await collection.insertOne({
+      timestamp: message.timestamp,
+      userId: message.userId,
+      content: message.content,
     });
-    console.log(`Inserted array document with _id: ${result.insertedId}`);
 
+    console.log(
+      `Message uploaded to MongoDB successfully in collection: ${collectionName}`
+    );
   } catch (err) {
     console.error(err);
   }
 }
+
+/* 
+  呼叫使用範例：
+  uploadToDB({
+    timestamp: '06-02 22:57',
+    userId: 'cbf04c45-3ce9-4046-8757-31eaf41b5229',
+    content: 'Hello, world!'
+  });
+*/
+
+
+async function updateToDB(collectionName, userId, newMessage) {
+  try {
+    const database = await connectToDB();
+    const collection = database.collection(collectionName);
+
+    // 使用 updateOne 方法依據 userId 更新資料
+    const result = await collection.updateOne(
+      {
+        userId: userId,
+      },
+      { $set: { content: newMessage } } // 輸入要修改的欄位和新設定的值
+    );
+
+    if (result.matchedCount === 1) {
+      console.log("Message updated successfully!");
+    } else {
+      console.log("Message not found!");
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+/* 
+  呼叫使用範例：
+  updateToDB(
+    'user_cbf04c45-3ce9-4046-8757-31eaf41b5229', 
+    'cbf04c45-3ce9-4046-8757-31eaf41b5229', 
+    'New message content'
+  );
+*/
+
+
+async function addUserToDB(user) {
+  try {
+    const database = await connectToDB();
+    const collection = database.collection("users");
+
+    // 儲存 user 的 id, name? and others...
+    await collection.insertOne({
+      userId: user.userId,
+      username: user.username,
+      // location: user.location,
+      // subscribe: user.subscribe,
+    });
+
+    console.log(`Uploaded to MongoDB successfully in collection: "users".`);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+/* 
+  呼叫使用範例：
+  addUserToDB({
+    userId: 'cbf04c45-3ce9-4046-8757-31eaf41b5229',
+    username: 'newuser',
+    // location: 'Taiwan',
+    // subscribe: true,
+  }); 
+*/
+
+
+async function updateUserToDB(userId, username) {
+  try {
+    const database = await connectToDB();
+    const collection = database.collection("users");
+
+    // 使用 updateOne 方法依據 userId 更新 username 資料
+    const result = await collection.updateOne(
+      { userId: userId },
+      { $set: { username: username } }
+    );
+
+    if (result.matchedCount === 1) {
+      console.log("User updated successfully!");
+    } else {
+      console.log("User not found!");
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+/* 
+  呼叫使用範例：
+  updateUserToDB(
+    'cbf04c45-3ce9-4046-8757-31eaf41b5229', 
+    'updatedusername'
+  );
+*/
 
 process.on("SIGINT", async () => {
   await client.close();
@@ -54,7 +152,8 @@ process.on("SIGINT", async () => {
 });
 
 module.exports = {
-  client,
   uploadToDB,
+  updateToDB,
+  addUserToDB,
+  updateUserToDB,
 };
-

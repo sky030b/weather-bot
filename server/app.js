@@ -3,7 +3,6 @@ const path = require("path");
 const http = require("http");
 const ServerSocket = require("ws").Server;
 const chatController = require("./controllers/chatController");
-const uploadToDB = require("./models/uploadToDB");
 
 const app = express();
 const port = 5000;
@@ -21,5 +20,3 @@ wss.on("connection", (ws) => {
 server.listen(port, () => {
   console.log(`Server is listening on http://localhost:${port}`);
 });
-
-uploadToDB().catch(console.dir);
