@@ -2,6 +2,10 @@ const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const socket = require('socket.io');
 require('dotenv').config();
 
+/* 
+Discord
+*/
+
 
 const client = new Client({
   intents: [
@@ -20,7 +24,9 @@ client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
-const data = {};
+// Temporary structure 
+// {id1:[{bot: false, message: "Hey"}], id2:[{bot: false, message: "Hi"}]}
+const messages = {};
 
 client.on('guildMemberAdd', (member) => {
   const user = member.user;
@@ -31,16 +37,19 @@ client.on('guildMemberAdd', (member) => {
 
 client.on('messageCreate', async (message) => {
   const userId = message.author.id;
-  if (!message.guild) {
-    console.log(userId, message.content);
-    if (!data[userId]) {
-      data[userId] = [message.content];
+  console.log(message.author)
+  if (!message.guild &&  message.author.bot === false) {
+    console.log(userId, message);
+    if (!messages[userId]) {
+      messages[userId] = [{bot: false, message: message.content}];
     } else {
-      data[userId].push(message.content);
+      messages[userId].push({bot: false, message: message.content});
     }
-    sendMessageToWebSocket(userId, message.content);
+    sendMessageToWebSocket(userId, message.content, message.author.globalName);
+  } else{
+
   }
-  console.log(data);
+  console.log(messages);
 });
 
 async function sendMessageToDiscord(userId, messageContent) {
@@ -49,6 +58,8 @@ async function sendMessageToDiscord(userId, messageContent) {
     if (user) {
       await user.send(messageContent);
       console.log(`Sent message to user ${userId}: ${messageContent}`);
+      messages[userId].push({bot:true, message:messageContent})
+      console.log(messages);
     } else {
       console.error(`User ${userId} not found`);
     }
@@ -59,8 +70,9 @@ async function sendMessageToDiscord(userId, messageContent) {
 
 client.login(process.env.DC_BOT_TOKEN);
 
-/// Socket
-
+/* 
+Socket
+*/
 
 let io;
 
@@ -72,17 +84,17 @@ function setupWebSocket(server) {
 
     socket.on('joinRoom', (roomId) => {
       socket.join(roomId);
-      console.log(`User joined room: ${roomId}`);
+      console.log(`後台管理員登入 room: ${roomId}`);
     });
 
-    socket.on('sendMessageToBot', ({ roomId, message }) => {
+    socket.on('sendMessageToUser', ({ roomId, message }) => {
       if (roomId) {
         sendMessageToDiscord(roomId, message); // Send DM to the user
       }
     });
 
-    socket.on('sendMessage', ({ roomId, message }) => {
-      io.to(roomId).emit('messageFromBot', { message });
+    socket.on('messageFromUser', ({ roomId, message }) => {
+      io.to(roomId).emit('messageFromUser', { message });
     });
 
     socket.on('disconnect', () => {
@@ -91,16 +103,14 @@ function setupWebSocket(server) {
   });
 }
 
-function sendMessageToWebSocket(roomId, message) {
+function sendMessageToWebSocket(roomId, message, username) {
   if (io) {
-    io.to(roomId).emit('messageFromBot', { message });
+    io.to(roomId).emit('messageFromUser', { message, userId:roomId, username });
   } else {
     console.error('WebSocket server not initialized.');
   }
 }
 
-
 // 
-
 
 module.exports = { setupWebSocket };
