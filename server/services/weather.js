@@ -38,21 +38,6 @@ function getPeriodTime(description) {
     targetDate = getNowTime().slice(0, 10);
   }
 
-  // const timePeriods = [
-  //   { label: '凌晨', start: 0, end: 3 },
-  //   { label: '深夜', start: 0, end: 3 },
-  //   { label: '清晨', start: 3, end: 6 },
-  //   { label: '早晨', start: 6, end: 9 },
-  //   { label: '上午', start: 9, end: 12 },
-  //   { label: '早上', start: 9, end: 12 },
-  //   { label: '中午', start: 12, end: 15 },
-  //   { label: '下午', start: 12, end: 15 },
-  //   { label: '傍晚', start: 15, end: 18 },
-  //   { label: '黃昏', start: 18, end: 21 },
-  //   { label: '夜晚', start: 18, end: 21 },
-  //   { label: '晚上', start: 21, end: 24 }
-  // ];
-
   const timePeriods = [
     { label: '晚上', start: 21, end: 24 },
     { label: '夜晚', start: 18, end: 21 },
@@ -68,10 +53,12 @@ function getPeriodTime(description) {
     { label: '凌晨', start: 0, end: 3 }
   ];
 
-  const period = timePeriods.find(period => description.includes(period.label));
+  let period = timePeriods.find(period => description.includes(period.label));
   if (!period) {
     // alert("無效的時間描述，將提供現在的天氣資訊。");
-    return getNowTime();
+    if (targetDate < getNowTime()) return getNowTime();
+
+    period = { label: '早上', start: 9, end: 12 };
   }
 
   const hour = String(period.start).padStart(2, '0');
@@ -83,7 +70,7 @@ function getPeriodTime(description) {
 function getReplyAttr(description) {
   let attributes = [];
   const allAttributes = ["weather", "rainProbability", "temperature", "feeling", "wind", "humidity"];
-  if (description.includes("天氣") || description.includes("氣候")) attributes.push("weather");
+  if (description.includes("天氣") || description.includes("氣象")) attributes.push("weather");
   if (description.includes("降雨") || description.includes("機率")) attributes.push("rainProbability");
   if (description.includes("溫度") || description.includes("氣溫")) attributes.push("temperature");
   if (description.includes("體感") || description.includes("覺得")) attributes.push("feeling");
@@ -134,9 +121,7 @@ async function init() {
 
 init();
 
-// async function analyzeMessageReturnWeather(description) {
 function analyzeMessageReturnWeather(description) {
-  // await fetchWeatherData();
   const periodTime = getPeriodTime(description);
   const attributes = getReplyAttr(description);
   return getReply(periodTime, attributes);
