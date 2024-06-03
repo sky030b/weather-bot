@@ -39,10 +39,19 @@ client.on('guildMemberAdd', (member) => {
 function scheduleMessage(datetime, userId, username) {
   // '*/5 * * * *'
   //schedule.scheduleJob(datetime, async () => {
-  schedule.scheduleJob('*/1 * * * *', async () => {
+  const [dateStr, timeStr] = datetime.split(' ');
+  const [year, month, day] = dateStr.split('-');
+  const [hours, minutes] = timeStr.split(':');
+  
+  // Month in JavaScript Date starts from 0, so subtract 1
+  const targetDate = new Date(year, month - 1, day, hours, minutes);
+  console.log(targetDate);
+  
+  schedule.scheduleJob(targetDate, async () => {
     console.log('GOOOOOOOOOOOOOOOO')
     // Send the scheduled message
-    const messageContent = `Hello ${username}, this is a scheduled message.`
+    const temperatureNow = analyzeMessageReturnWeather('temperature')
+    const messageContent = `親愛可愛的 ${username} 您好! \n 現在天氣如下 ${temperatureNow}`
     await sendMessageToDiscord(userId, messageContent)
   });
 }
@@ -53,13 +62,14 @@ client.on('messageCreate', async (message) => {
     console.log(userId, message.author.globalName, message.content);
     if (message.content.startsWith('!schedule')) {
       const [command, date, time, ...otherThings] = message.content.split(' ');
-      const datetime = new Date(`${date}T${time}:00.000Z`);
-      if (isNaN(datetime.getTime())) {
+      const datetime = `${date} ${time}`;
+      const testTime = new Date(`${date} ${time}:00.000Z`);
+      if (isNaN(testTime.getTime())) {
         message.reply('Invalid date format. Please use a valid date.');
         return;
       } else{
         scheduleMessage(datetime, userId, message.author.globalName);
-        message.reply('OK')
+        message.reply(`OK! I will tell you the temperature right at ${testTime.toLocaleString('en-US')}`)
       }
       
       return
