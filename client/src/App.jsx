@@ -50,6 +50,10 @@ function App() {
     };
     socket.current.emit('sendMessageToUser', messageObj);
 
+    const roomId = userId;
+  
+    socket.current.emit('joinRoom', roomId);
+    console.log(`Joining room ${roomId}`);
   }
 
   const userNames = users.map((input) => {
@@ -90,10 +94,6 @@ function App() {
       socket.current.on('connect', () => {
         console.log('Connected to WebSocket server!');
       });
-      const roomId = "766314052904943647";
-  
-      socket.current.emit('joinRoom', roomId);
-      console.log(`Joining room ${roomId}`);
   }, []);
 
   useEffect(() => {
