@@ -2,11 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import io from 'socket.io-client';
 import './App.css';
 
-function getNowTime() {
-  const taiwanOffset = 8 * 60 * 60 * 1000;
-  return new Date(Date.now() + taiwanOffset).toISOString().slice(0, 19).replace("T", " ");
-}
-
 function App() {
   const [users, setUsers] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
@@ -20,11 +15,6 @@ function App() {
       message: messageContent,
     };
     socket.current.emit('sendMessageToUser', messageObj);
-
-    const roomId = userId;
-
-    socket.current.emit('joinRoom', roomId);
-    console.log(`Joining room ${roomId}`);
   }
 
   const userNames = users.map((input) => {
@@ -66,54 +56,57 @@ function App() {
       console.log('Connected to WebSocket server!');
     });
 
-    // return () => {
-    //   if (socket.current) {
-    //     socket.current.disconnect();
-    //   }
-    // };
+    return () => {
+      if (socket.current) {
+        socket.current.disconnect();
+      }
+    };
 
   }, []);
 
   useEffect(() => {
     if (!currentUserId) return;
+    setMessages([]);
+
+    const roomId = currentUserId;
+    socket.current.emit('joinRoom', roomId);
+    console.log(`Joining room ${roomId}`);
 
     fetch(`/api/messages?id=${currentUserId}`)
       .then((response) => response.json())
       .then((json) => {
-        console.log(json);
         const user = users.find(user => user.userId === currentUserId);
-        console.log(user);
         if (user) {
           setMessages(json.messages);
         }
       })
       .catch((error) => console.error('Error fetching messages:', error));
+
   }, [currentUserId]);
 
   useEffect(() => {
-    console.log(socket.current)
-    // if (!socket.current) return;
+    if (!socket.current) return;
 
     const handleMessageFromUser = (messageObj) => {
-      console.log(messages, messageObj)
       // setMessages([]);
-      const userId = messageObj.userId;
-      const content = messageObj.message;
 
-      // const user = users.find(user => user.userId === userId);
+      const { userId, username: globalName, message: content, isBot } = messageObj;
 
-      // if (!user) {
-      //   console.error(`未找到ID為 ${userId} 的用戶`);
-      //   return;
-      // }
+      const user = users.find(user => user.userId === userId);
+      if (!user) {
+        console.error(`未找到ID為 ${userId} 的用戶`);
+        return;
+      }
 
-      const newMessages = [...messages, {
-        userId,
-        isBot: true,
-        globalName: messageObj.username,
-        content,
-        timestamp: getNowTime()
-      }];
+      const newMessages = [
+        ...messages,
+        {
+          userId,
+          isBot,
+          globalName,
+          content
+        }
+      ];
 
       setMessages(newMessages);
       setInputValue('');

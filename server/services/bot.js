@@ -64,7 +64,6 @@ client.on('messageCreate', async (message) => {
     await saveMessageToDB(userId, message.author.globalName, false, message.content);
     console.log(userId, message.author.globalName, message.content);
     sendMessageToWebSocket(userId, message.content, message.author.globalName);
-    sendMessageToWebSocket(userId, message.content, message.author.globalName);
     if (message.content.startsWith('!schedule')) {
       const [command, date, time, ...otherThings] = message.content.split(' ');
       const datetime = `${date} ${time}`;
