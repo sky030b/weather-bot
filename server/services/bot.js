@@ -36,33 +36,34 @@ client.on('guildMemberAdd', (member) => {
   }
 });
 
+function scheduleMessage(datetime, userId, username) {
+  // '*/5 * * * *'
+  //schedule.scheduleJob(datetime, async () => {
+  schedule.scheduleJob('*/1 * * * *', async () => {
+    console.log('GOOOOOOOOOOOOOOOO')
+    // Send the scheduled message
+    const messageContent = `Hello ${username}, this is a scheduled message.`
+    await sendMessageToDiscord(userId, messageContent)
+  });
+}
+
 client.on('messageCreate', async (message) => {
   const userId = message.author.id;
-  console.log(message.author)
   if (!message.guild &&  message.author.bot === false) {
-    console.log(userId, message);
+    console.log(userId, message.author.globalName, message.content);
     if (message.content.startsWith('!schedule')) {
-      const [command, dateStr, ...msgParts] = message.content.split(' ');
-      const messageContent = msgParts.join(' ');
-  
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) {
+      const [command, date, time, ...otherThings] = message.content.split(' ');
+      const datetime = new Date(`${date}T${time}:00.000Z`);
+      if (isNaN(datetime.getTime())) {
         message.reply('Invalid date format. Please use a valid date.');
         return;
+      } else{
+        scheduleMessage(datetime, userId, message.author.globalName);
+        message.reply('OK')
       }
-  
-      const userId = message.author.id;
-  
-      // Schedule the message
-      if (scheduledJobs[userId]) {
-        scheduledJobs[userId].cancel(); // Cancel the previous job if it exists
-      }
-  
-      scheduledJobs[userId] = schedule.scheduleJob(date, () => {
-        sendScheduledMessage(userId, messageContent);
-      });
+      
+      return
     }
-
     if (!messages[userId]) {
       messages[userId] = [{bot: false, message: message.content}];
     } else {
@@ -73,9 +74,9 @@ client.on('messageCreate', async (message) => {
     sendMessageToWebSocket(userId, message.content, message.author.globalName);
     
   } else{
-    message.reply('DM me!')
+    // message.send('DM me!')
   }
-  console.log(messages);
+  // console.log(messages);
 });
 
 async function sendMessageToDiscord(userId, messageContent) {
@@ -83,23 +84,10 @@ async function sendMessageToDiscord(userId, messageContent) {
     const user = await client.users.fetch(userId);
     if (user) {
       await user.send(messageContent);
-      console.log(`Sent message to user ${userId}: ${messageContent}`);
+      sendMessageToWebSocket(userId, messageContent, 'Weather bot')
+      // console.log(`Sent message to user ${userId}: ${messageContent}`);
       messages[userId].push({bot:true, message:messageContent})
-      console.log(messages);
-    } else {
-      console.error(`User ${userId} not found`);
-    }
-  } catch (error) {
-    console.error(`Failed to send message to user ${userId}:`, error);
-  }
-}
-
-async function sendScheduledMessage(userId, messageContent) {
-  try {
-    const user = await client.users.fetch(userId);
-    if (user) {
-      await user.send(messageContent);
-      console.log(`Sent message to user ${userId}: ${messageContent}`);
+      //console.log(messages);
     } else {
       console.error(`User ${userId} not found`);
     }
