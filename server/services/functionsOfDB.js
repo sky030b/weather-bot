@@ -82,15 +82,18 @@ async function addUserToDB(userId, globalName) {
   try {
     const database = await connectToDB();
     const collection = database.collection("users");
+    await collection.createIndex({ userId: 1 }, { unique: true, sparse: true });
 
-    await collection.insertOne({
-      userId: userId,
-      globalName: globalName
-    });
-
-    console.log(
-      `Uploaded user ${globalName} successfully in collection: "users".`
-    );
+    const existingUser = await collection.findOne({ userId: userId });
+    if (!existingUser) {
+      await collection.insertOne({
+        userId: userId,
+        globalName: globalName,
+      });
+      console.log(
+        `Uploaded user ${globalName} successfully in collection: "users".`
+      );
+    }
   } catch (err) {
     console.error(err);
   }
