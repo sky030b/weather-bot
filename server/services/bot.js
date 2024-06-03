@@ -72,25 +72,21 @@ client.on('messageCreate', async (message) => {
       } else{
         scheduleMessage(datetime, userId, message.author.globalName);
         message.reply(`OK! I will tell you the temperature right on ${formattedTime}`)
+        return
       }
-      
-      return
-    }
-    if (!messages[userId]) {
-      messages[userId] = [{bot: false, message: message.content}];
-    } else {
-      messages[userId].push({bot: false, message: message.content});
-    }
-    sendMessageToWebSocket(userId, message.content, message.author.globalName);
-    const botResponse =  analyzeMessageReturnWeather(message.content);
-    console.log(botResponse)
-    if(botResponse === 'no match'){
-      sendMessageToDiscord(userId, 'I do not understand. Try key word like 天氣 , 溫度 or sort of ;) ')
+    } else{
+      sendMessageToWebSocket(userId, message.content, message.author.globalName);
+      const botResponse =  analyzeMessageReturnWeather(message.content);
+      console.log(botResponse)
+      if(botResponse === 'no match'){
+        sendMessageToDiscord(userId, 'I do not understand. Try key word like 天氣 , 溫度 or sort of ;) ')
+        sendMessageToWebSocket(userId, botResponse, message.author.globalName, isBot = true)
+        return 
+      }
+      sendMessageToDiscord(userId, botResponse);
       sendMessageToWebSocket(userId, botResponse, message.author.globalName, isBot = true)
-      return 
     }
-    sendMessageToDiscord(userId, botResponse);
-    sendMessageToWebSocket(userId, botResponse, message.author.globalName, isBot = true)
+    
     
   } else{
     // message.send('DM me!')
@@ -108,7 +104,7 @@ async function sendMessageToDiscord(userId, messageContent) {
       messages[userId].push({isBot:true, message:messageContent})
       //console.log(messages);
       await addUserToDB(userId, 'weather-bot')
-      await saveMessageToDB(userId, message.author.globalName, false, message.content)
+      await saveMessageToDB(userId, 'weather-bot', false, messageContent)
     } else {
       console.error(`User ${userId} not found`);
     }
