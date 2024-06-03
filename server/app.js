@@ -21,26 +21,24 @@ setupWebSocket(server);
 app.get('/api/users', async (req, res) => {
   try{
     const messageHistory = await getUsers();
-    res.status(200).json({users: messageHistory})
+    return res.status(200).json({users: messageHistory})
   } catch{
-    res.status(400).json({error: "Failed to fetch data"})
+    return res.status(400).json({error: "Failed to fetch data"})
   }
 })
-
 
 app.get('/api/messages', async (req, res) => {
   const userId = req.query.id;
   if (!userId) {
-    res.status(400).json({ error: 'User ID is required' });
-    return;
+    return res.status(400).json({ error: 'User ID is required' });
   }
 
   try {
     const messageHistory = await getUserMessages(userId);
-    res.status(200).json( messageHistory );
+    return res.status(200).json( messageHistory );
   } catch (error) {
     console.error('Error fetching messages:', error);
-    res.status(400).json({ error: 'Internal Server Error' });
+    return res.status(400).json({ error: 'Internal Server Error' });
   }
 });
 
