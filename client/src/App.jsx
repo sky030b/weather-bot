@@ -8,31 +8,6 @@ function App() {
   const [inputValue, setInputValue] = useState("");
   const socket = useRef(null);
 
-  // function addMessage(userId, messageContent) {
-  //   console.log(userId, messageContent);
-  //   console.log(123, users);
-  //   console.log(users.find(user => user.id === userId));
-  //   console.log(users.find(user => user.id === userId).messages);
-  //   fetch(`http://localhost:4000/users/${userId}`, {
-  //     method: "PATCH",
-  //     headers: {
-  //       'Content-Type': 'application/json'
-  //     },
-  //     body: JSON.stringify({
-  //       messages: [...users.find(user => user.id === userId).messages, { id: Date.now(), message: messageContent }]
-  //     })
-  //   })
-  //   .then(response => response.json())
-  //   .then(data => {
-  //     const updatedUsers = users.map(user => 
-  //       user.id === userId ? { ...user, messages: data.messages } : user
-  //     );
-  //     console.log(updatedUsers);
-  //     setUsers(updatedUsers);
-  //     setInputValue('');
-  //   })
-  // }
-
   function addMessage(userId, messageContent) {
     const newMessage = {
       messages: [...users.find(user => user.id === userId).messages, { id: Date.now(), message: messageContent }]
@@ -130,32 +105,6 @@ function App() {
       socket.current.off('messageFromUser', handleMessageFromUser);
     };
   }, [users]);
-
-  // useEffect(() => {
-
-  //   // return () => {
-  //   //   socket.current.disconnect();
-  //   // };
-
-  //   socket.current.on('messageFromUser', (messageObj) => {
-  //     const userId = messageObj.userId;
-  //     const messageContent = messageObj.message;
-  //     console.log(userId,messageContent);
-      
-  //     const newMessage = {
-  //       messages: [...users.find(user => user.id === userId).messages, { id: Date.now(), message: messageContent }]
-  //     }
-  //     const updatedUsers = users.map(user => 
-  //       user.id === userId ? { ...user, messages: newMessage.messages } : user
-  //     );
-  //     console.log(updatedUsers);
-  //     setUsers(updatedUsers);
-  //     setInputValue('');
-
-  //     console.log(123456);
-  //   });
-
-  // }, [users]);
 
   return (
     <>
