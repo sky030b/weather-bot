@@ -75,16 +75,16 @@ client.on('messageCreate', async (message) => {
         return
       }
     } else{
-      sendMessageToWebSocket(userId, message.content, message.author.globalName);
+      // sendMessageToWebSocket(userId, message.content, message.author.globalName);
       const botResponse =  analyzeMessageReturnWeather(message.content);
       console.log(botResponse)
       if(botResponse === 'no match'){
         sendMessageToDiscord(userId, 'I do not understand. Try key word like 天氣 , 溫度 or sort of ;) ')
-        sendMessageToWebSocket(userId, botResponse, message.author.globalName, isBot = true)
+        // sendMessageToWebSocket(userId, botResponse, message.author.globalName, isBot = true)
         return 
       }
       sendMessageToDiscord(userId, botResponse);
-      sendMessageToWebSocket(userId, botResponse, message.author.globalName, isBot = true)
+      // sendMessageToWebSocket(userId, botResponse, message.author.globalName, isBot = true)
     }
     
     
