@@ -59,6 +59,7 @@ async function sendMessageToDiscord(userId, messageContent) {
     const user = await client.users.fetch(userId);
     if (user) {
       await user.send(messageContent);
+      sendMessageToWebSocket(userId, messageContent, 'weather-bot')
       console.log(`Sent message to user ${userId}: ${messageContent}`);
       messages[userId].push({bot:true, message:messageContent})
       console.log(messages);

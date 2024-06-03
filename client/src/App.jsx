@@ -54,8 +54,8 @@ function App() {
 
   const customerMessages = (users.find(user => user.id === currentUserId)?.messages || []).map((input) => {
     return (
-      <div key={input.id} className="customer-area">
-        <div className="customer-message">
+      <div key = {input.id} className = {(!input.username  || input.username === "weather-bot") ? "customer-area" : "user-area" }>
+        <div className={(!input.username  || input.username === "weather-bot") ? "customer-message" : "user-message"}>
           <p>{input.message}</p>
         </div>
       </div>
@@ -104,7 +104,11 @@ function App() {
       }
 
       const newMessage = {
-        messages: [...user.messages, { id: Date.now(), message: messageContent }]
+        messages: [...user.messages, { 
+          id: Date.now(), 
+          message: messageContent, 
+          username:messageObj.username 
+        }]
       }
       const updatedUsers = users.map(user => 
         user.id === userId ? { ...user, messages: newMessage.messages } : user

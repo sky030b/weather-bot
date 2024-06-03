@@ -120,12 +120,19 @@ body {
   max-width: 60%;
 }
 
-.customer-message>p {
-  margin: 0px;
+.customer-bot-message {
+  background-color: #0033ff;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  width: fit-content;
+  max-width: 60%;
 }
 
-.user-message>p {
+.customer-message>p, .customer-bot-message>p, .user-message>p {
   margin: 0px;
+  white-space: pre;
+  text-wrap: wrap;
 }
 
 .input-area {
