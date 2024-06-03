@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && rm -rf C:\\偽D槽\\程式語言\\'App Work School'\\Repository\\weather-bot\\server\\public && cp -r C:\\偽D槽\\程式語言\\'App Work School'\\Repository\\weather-bot\\client\\dist C:\\偽D槽\\程式語言\\'App Work School'\\Repository\\weather-bot\\server\\public",    
+    "build": "vite build && rm -rf ..\\server\\public && cp -r .\\dist ..\\server\\public",    
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },

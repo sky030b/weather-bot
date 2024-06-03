@@ -2,23 +2,19 @@ import { useEffect, useState, useRef } from "react";
 import io from 'socket.io-client';
 import './App.css';
 
+function getNowTime() {
+  const taiwanOffset = 8 * 60 * 60 * 1000;
+  return new Date(Date.now() + taiwanOffset).toISOString().slice(0, 19).replace("T", " ");
+}
+
 function App() {
   const [users, setUsers] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [inputValue, setInputValue] = useState("");
+  const [messages, setMessages] = useState([]);
   const socket = useRef(null);
 
   function addMessage(userId, messageContent) {
-    const newMessage = {
-      messages: [...users.find(user => user.id === userId).messages, { id: Date.now(), message: messageContent }]
-    }
-    const updatedUsers = users.map(user => 
-      user.id === userId ? { ...user, messages: newMessage.messages } : user
-    );
-    setUsers(updatedUsers);
-    setInputValue('');
-
-    // 新增：將消息發送到 WebSocket
     const messageObj = {
       roomId: userId,
       message: messageContent,
@@ -26,24 +22,24 @@ function App() {
     socket.current.emit('sendMessageToUser', messageObj);
 
     const roomId = userId;
-  
+
     socket.current.emit('joinRoom', roomId);
     console.log(`Joining room ${roomId}`);
   }
 
   const userNames = users.map((input) => {
     return (
-      <div key={input.id} onClick={() => setCurrentUserId(input.id)}>
-        {input.user}
+      <div key={input.userId} onClick={() => setCurrentUserId(input.userId)}>
+        {input.globalName}
       </div>
     );
   });
 
-  const customerMessages = (users.find(user => user.id === currentUserId)?.messages || []).map((input) => {
+  const customerMessages = messages.map((messageObj) => {
     return (
-      <div key = {input.id} className = {(!input.username  || input.username === "weather-bot") ? "customer-area" : "user-area" }>
-        <div className={(!input.username  || input.username === "weather-bot") ? "customer-message" : "user-message"}>
-          <p>{input.message}</p>
+      <div key={messageObj.userId} className={messageObj.isBot ? "customer-area" : "user-area"}>
+        <div className={messageObj.isBot ? "customer-message" : "user-message"}>
+          <p>{messageObj.content}</p>
         </div>
       </div>
     );
@@ -56,46 +52,70 @@ function App() {
   };
 
   useEffect(() => {
-    fetch("http://localhost:4000/users")
+    fetch('/api/users')
       .then((response) => response.json())
       .then((json) => {
-        setUsers(json);
-        if (json.length > 0) {
-          setCurrentUserId(json[0].id);
+        setUsers(json.users);
+        if (json.users.length > 0) {
+          setCurrentUserId(json.users[0].userId);
         }
       });
 
-      socket.current = io('http://localhost:3000');
-      socket.current.on('connect', () => {
-        console.log('Connected to WebSocket server!');
-      });
+    socket.current = io('http://localhost:3000');
+    socket.current.on('connect', () => {
+      console.log('Connected to WebSocket server!');
+    });
+
+    // return () => {
+    //   if (socket.current) {
+    //     socket.current.disconnect();
+    //   }
+    // };
+
   }, []);
 
   useEffect(() => {
-    if (!socket.current) return;
+    if (!currentUserId) return;
+
+    fetch(`/api/messages?id=${currentUserId}`)
+      .then((response) => response.json())
+      .then((json) => {
+        console.log(json);
+        const user = users.find(user => user.userId === currentUserId);
+        console.log(user);
+        if (user) {
+          setMessages(json.messages);
+        }
+      })
+      .catch((error) => console.error('Error fetching messages:', error));
+  }, [currentUserId]);
+
+  useEffect(() => {
+    console.log(socket.current)
+    // if (!socket.current) return;
 
     const handleMessageFromUser = (messageObj) => {
+      console.log(messages, messageObj)
+      // setMessages([]);
       const userId = messageObj.userId;
-      const messageContent = messageObj.message;
+      const content = messageObj.message;
 
-      const user = users.find(user => user.id === userId);
+      // const user = users.find(user => user.userId === userId);
 
-      if (!user) {
-        console.error(`未找到ID為 ${userId} 的用戶`);
-        return;
-      }
+      // if (!user) {
+      //   console.error(`未找到ID為 ${userId} 的用戶`);
+      //   return;
+      // }
 
-      const newMessage = {
-        messages: [...user.messages, { 
-          id: Date.now(), 
-          message: messageContent, 
-          username:messageObj.username 
-        }]
-      }
-      const updatedUsers = users.map(user => 
-        user.id === userId ? { ...user, messages: newMessage.messages } : user
-      );
-      setUsers(updatedUsers);
+      const newMessages = [...messages, {
+        userId,
+        isBot: true,
+        globalName: messageObj.username,
+        content,
+        timestamp: getNowTime()
+      }];
+
+      setMessages(newMessages);
       setInputValue('');
     };
 
@@ -104,7 +124,7 @@ function App() {
     return () => {
       socket.current.off('messageFromUser', handleMessageFromUser);
     };
-  }, [users]);
+  }, [messages]);
 
   return (
     <>
@@ -120,7 +140,7 @@ function App() {
         </div>
         <div className="main">
           <div className="chat-header">
-            {currentUserId ? `客戶聊天視窗 - ${users.find(user => user.id === currentUserId)?.user}` : "客戶聊天視窗"}
+            {currentUserId ? `客戶聊天視窗 - ${users.find(user => user.userId === currentUserId).globalName}` : "客戶聊天視窗"}
           </div>
           <div className="chat-area" id="chat-area">
             {customerMessages}
