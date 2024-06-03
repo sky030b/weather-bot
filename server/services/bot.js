@@ -1,6 +1,7 @@
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const socket = require('socket.io');
-const { fetchWeatherData, analyzeMessageReturnWeather } = require('./weather');
+const { analyzeMessageReturnWeather } = require('./weather');
+const { saveMessageToDB, getUserMessages, addUserToDB, getUsers, updateUserToDB } = require('./functionsOfDB.js');
 const schedule = require('node-schedule');
 
 /* 
@@ -57,6 +58,7 @@ function scheduleMessage(datetime, userId, username) {
 client.on('messageCreate', async (message) => {
   const userId = message.author.id;
   if (!message.guild &&  message.author.bot === false) {
+    await saveMessageToDB(userId, message.author.globalName, false, message.content)
     console.log(userId, message.author.globalName, message.content);
     if (message.content.startsWith('!schedule')) {
       const [command, date, time, ...otherThings] = message.content.split(' ');
