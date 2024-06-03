@@ -1,6 +1,7 @@
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const socket = require('socket.io');
 const { fetchWeatherData, analyzeMessageReturnWeather } = require('./weather');
+const schedule = require('node-schedule');
 
 /* 
 Discord
@@ -35,23 +36,65 @@ client.on('guildMemberAdd', (member) => {
   }
 });
 
+function scheduleMessage(datetime, userId, username) {
+  const [dateStr, timeStr] = datetime.split(' ');
+  const [year, month, day] = dateStr.split('-');
+  const [hours, minutes] = timeStr.split(':');
+  
+  // Month in JavaScript Date starts from 0, so subtract 1
+  const targetDate = new Date(year, month - 1, day, hours, minutes);
+  console.log(targetDate);
+  
+  schedule.scheduleJob(targetDate, async () => {
+    console.log('GOOOOOOOOOOOOOOOO')
+    // Send the scheduled message
+    const weatherString = analyzeMessageReturnWeather('溫度')
+    const forecastDate = weatherString.split(' ')[0]
+    const forecastContent = weatherString.slice(weatherString.indexOf(' '));
+    console.log(weatherString)
+    console.log(forecastDate)
+    console.log(forecastContent)
+    const messageContent = `親愛可愛的 ${username} 您好! \n 現在天氣(${forecastDate})如下 ${forecastContent}`
+    await sendMessageToDiscord(userId, messageContent)
+  });
+}
+
 client.on('messageCreate', async (message) => {
   const userId = message.author.id;
-  console.log(message.author)
   if (!message.guild &&  message.author.bot === false) {
-    console.log(userId, message);
+    console.log(userId, message.author.globalName, message.content);
+    if (message.content.startsWith('!schedule')) {
+      const [command, date, time, ...otherThings] = message.content.split(' ');
+      const datetime = `${date} ${time}`;
+      const testTime = new Date(`${date} ${time}:00.000Z`);
+      if (isNaN(testTime.getTime())) {
+        message.reply('Invalid date format. Please use a valid date.');
+        return;
+      } else{
+        scheduleMessage(datetime, userId, message.author.globalName);
+        message.reply(`OK! I will tell you the temperature right at ${testTime}`)
+      }
+      
+      return
+    }
     if (!messages[userId]) {
       messages[userId] = [{bot: false, message: message.content}];
     } else {
       messages[userId].push({bot: false, message: message.content});
     }
-    const botResponse =  analyzeMessageReturnWeather(message.content);
-    sendMessageToDiscord(userId, botResponse)
     sendMessageToWebSocket(userId, message.content, message.author.globalName);
+    const botResponse =  analyzeMessageReturnWeather(message.content);
+    console.log(botResponse)
+    if(botResponse === 'no match'){
+      sendMessageToDiscord(userId, 'I do not understand. Try key word like 天氣 , 溫度 or sort of ;) ')
+      return 
+    }
+    sendMessageToDiscord(userId, botResponse);
+    
   } else{
-
+    // message.send('DM me!')
   }
-  console.log(messages);
+  // console.log(messages);
 });
 
 async function sendMessageToDiscord(userId, messageContent) {
@@ -59,9 +102,10 @@ async function sendMessageToDiscord(userId, messageContent) {
     const user = await client.users.fetch(userId);
     if (user) {
       await user.send(messageContent);
-      console.log(`Sent message to user ${userId}: ${messageContent}`);
-      messages[userId].push({bot:true, message:messageContent})
-      console.log(messages);
+      sendMessageToWebSocket(userId, messageContent, 'weather-bot', true)
+      // console.log(`Sent message to user ${userId}: ${messageContent}`);
+      messages[userId].push({isBot:true, message:messageContent})
+      //console.log(messages);
     } else {
       console.error(`User ${userId} not found`);
     }
@@ -105,9 +149,9 @@ function setupWebSocket(server) {
   });
 }
 
-function sendMessageToWebSocket(roomId, message, username) {
+function sendMessageToWebSocket(roomId, message, username, isBot = false) {
   if (io) {
-    io.to(roomId).emit('messageFromUser', { message, userId:roomId, username });
+    io.to(roomId).emit('messageFromUser', { message, userId:roomId, username, isBot });
   } else {
     console.error('WebSocket server not initialized.');
   }
