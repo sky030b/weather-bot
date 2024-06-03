@@ -63,6 +63,7 @@ client.on('messageCreate', async (message) => {
     await addUserToDB(message.author.id, message.author.globalName)
     await saveMessageToDB(userId, message.author.globalName, false, message.content)
     console.log(userId, message.author.globalName, message.content);
+    sendMessageToWebSocket(userId, message.content, message.author.globalName);
     if (message.content.startsWith('!schedule')) {
       const [command, date, time, ...otherThings] = message.content.split(' ');
       const datetime = `${date} ${time}`;
@@ -76,8 +77,7 @@ client.on('messageCreate', async (message) => {
         message.reply(`OK! I will tell you the temperature right on ${formattedTime}`)
         return
       }
-    } else{
-      // sendMessageToWebSocket(userId, message.content, message.author.globalName);
+    } else {
       const botResponse =  analyzeMessageReturnWeather(message.content);
       console.log(botResponse)
       if(botResponse === 'no match'){
