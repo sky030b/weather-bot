@@ -49,12 +49,7 @@ function scheduleMessage(datetime, userId, username) {
     console.log('GOOOOOOOOOOOOOOOO')
     // Send the scheduled message
     const weatherString = analyzeMessageReturnWeather('溫度')
-    const forecastDate = weatherString.split(' ')[0]
-    const forecastContent = weatherString.slice(weatherString.indexOf(' '));
-    console.log(weatherString)
-    console.log(forecastDate)
-    console.log(forecastContent)
-    const messageContent = `親愛可愛的 ${username} 您好! \n 現在天氣(${forecastDate})如下 ${forecastContent}`
+    const messageContent = `親愛可愛的 ${username} 你好! \n ${weatherString}`
     await sendMessageToDiscord(userId, messageContent)
   });
 }
@@ -66,13 +61,14 @@ client.on('messageCreate', async (message) => {
     if (message.content.startsWith('!schedule')) {
       const [command, date, time, ...otherThings] = message.content.split(' ');
       const datetime = `${date} ${time}`;
-      const testTime = new Date(`${date} ${time}:00.000Z`);
-      if (isNaN(testTime.getTime())) {
+      const targetDate = new Date(`${date}T${time}:00`);
+      const formattedTime = targetDate.toLocaleString('en-US', { timeZone: 'Asia/Taipei' });
+      if (isNaN(targetDate.getTime())) {
         message.reply('Invalid date format. Please use a valid date.');
         return;
       } else{
         scheduleMessage(datetime, userId, message.author.globalName);
-        message.reply(`OK! I will tell you the temperature right at ${testTime}`)
+        message.reply(`OK! I will tell you the temperature right on ${formattedTime}`)
       }
       
       return
