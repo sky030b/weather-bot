@@ -58,6 +58,7 @@ function scheduleMessage(datetime, userId, username) {
 client.on('messageCreate', async (message) => {
   const userId = message.author.id;
   if (!message.guild &&  message.author.bot === false) {
+    await addUserToDB(message.author.id, message.author.globalName)
     await saveMessageToDB(userId, message.author.globalName, false, message.content)
     console.log(userId, message.author.globalName, message.content);
     if (message.content.startsWith('!schedule')) {
@@ -85,9 +86,11 @@ client.on('messageCreate', async (message) => {
     console.log(botResponse)
     if(botResponse === 'no match'){
       sendMessageToDiscord(userId, 'I do not understand. Try key word like 天氣 , 溫度 or sort of ;) ')
+      sendMessageToWebSocket(userId, botResponse, message.author.globalName, isBot = true)
       return 
     }
     sendMessageToDiscord(userId, botResponse);
+    sendMessageToWebSocket(userId, botResponse, message.author.globalName, isBot = true)
     
   } else{
     // message.send('DM me!')

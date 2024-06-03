@@ -29,7 +29,20 @@ async function saveMessageToDB(userId, globalName, isBot, content) {
     const database = await connectToDB();
     const collection = database.collection(userId);
 
+    const date = new Date();
+    const formattedDate = date
+      .toLocaleString("zh-CN", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false, // 24-hour format
+      })
+      .replace(/\//g, "-")
+      .replace(",", "");
+
     await collection.insertOne({
+      timestamp: formattedDate,
       userId: isBot ? "1246056144028303514" : userId,
       globalName: globalName,
       isBot: isBot,
@@ -69,15 +82,18 @@ async function addUserToDB(userId, globalName) {
   try {
     const database = await connectToDB();
     const collection = database.collection("users");
+    await collection.createIndex({ userId: 1 }, { unique: true, sparse: true });
 
-    await collection.insertOne({
-      userId: userId,
-      globalName: globalName
-    });
-
-    console.log(
-      `Uploaded user ${globalName} successfully in collection: "users".`
-    );
+    const existingUser = await collection.findOne({ userId: userId });
+    if (!existingUser) {
+      await collection.insertOne({
+        userId: userId,
+        globalName: globalName,
+      });
+      console.log(
+        `Uploaded user ${globalName} successfully in collection: "users".`
+      );
+    }
   } catch (err) {
     console.error(err);
   }
