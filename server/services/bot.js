@@ -135,6 +135,7 @@ function setupWebSocket(server) {
     });
 
     socket.on('sendMessageToUser', ({ roomId, message }) => {
+      console.log(roomId, message);
       if (roomId) {
         sendMessageToDiscord(roomId, message); // Send DM to the user
       }

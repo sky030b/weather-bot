@@ -9,12 +9,14 @@ const { getUsers, getUserMessages } = require('./services/functionsOfDB.js')
 const app = express();
 const server = http.createServer(app);
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 setupWebSocket(server);
 
-app.get('/', (req, res) => {
-  const indexPath = path.join(__dirname, '..', 'client', 'index.html'); // Adjust the path if needed
-  res.sendFile(indexPath);
-});
+// app.get('/', (req, res) => {
+//   const indexPath = path.join(__dirname, '..', 'client', 'index.html'); // Adjust the path if needed
+//   res.sendFile(indexPath);
+// });
 
 app.get('/api/users', async (req, res) => {
   try{
