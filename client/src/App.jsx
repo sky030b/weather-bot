@@ -8,24 +8,40 @@ function App() {
   const [inputValue, setInputValue] = useState("");
   const socket = useRef(null);
 
+  // function addMessage(userId, messageContent) {
+  //   console.log(userId, messageContent);
+  //   console.log(123, users);
+  //   console.log(users.find(user => user.id === userId));
+  //   console.log(users.find(user => user.id === userId).messages);
+  //   fetch(`http://localhost:4000/users/${userId}`, {
+  //     method: "PATCH",
+  //     headers: {
+  //       'Content-Type': 'application/json'
+  //     },
+  //     body: JSON.stringify({
+  //       messages: [...users.find(user => user.id === userId).messages, { id: Date.now(), message: messageContent }]
+  //     })
+  //   })
+  //   .then(response => response.json())
+  //   .then(data => {
+  //     const updatedUsers = users.map(user => 
+  //       user.id === userId ? { ...user, messages: data.messages } : user
+  //     );
+  //     console.log(updatedUsers);
+  //     setUsers(updatedUsers);
+  //     setInputValue('');
+  //   })
+  // }
+
   function addMessage(userId, messageContent) {
-    fetch(`http://localhost:4000/users/${userId}`, {
-      method: "PATCH",
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        messages: [...users.find(user => user.id === userId).messages, { id: Date.now(), message: messageContent }]
-      })
-    })
-    .then(response => response.json())
-    .then(data => {
-      const updatedUsers = users.map(user => 
-        user.id === userId ? { ...user, messages: data.messages } : user
-      );
-      setUsers(updatedUsers);
-      setInputValue('');
-    })
+    const newMessage = {
+      messages: [...users.find(user => user.id === userId).messages, { id: Date.now(), message: messageContent }]
+    }
+    const updatedUsers = users.map(user => 
+      user.id === userId ? { ...user, messages: newMessage.messages } : user
+    );
+    setUsers(updatedUsers);
+    setInputValue('');
   }
 
   const userNames = users.map((input) => {
@@ -61,39 +77,74 @@ function App() {
           setCurrentUserId(json[0].id);
         }
       });
+
+      socket.current = io('http://localhost:3000');
+      socket.current.on('connect', () => {
+        console.log('Connected to WebSocket server!');
+      });
+      const roomId = "766314052904943647";
+  
+      socket.current.emit('joinRoom', roomId);
+      console.log(`Joining room ${roomId}`);
   }, []);
 
   useEffect(() => {
-    socket.current = io('http://localhost:3000');
+    if (!socket.current) return;
 
-    socket.current.on('connect', () => {
-      console.log('Connected to WebSocket server!');
-    });
+    const handleMessageFromUser = (messageObj) => {
+      console.log(messageObj);
+      const userId = messageObj.userId;
+      const messageContent = messageObj.message;
 
-    socket.current.on('messageFromUser', (messageObj) => {
-      const userId = messageObj.serId;
-      const messageContent = messageObj.message
-      addMessage(userId, messageContent);
-    });
+      const user = users.find(user => user.id === userId);
+
+      if (!user) {
+        console.error(`未找到ID為 ${userId} 的用戶`);
+        return;
+      }
+
+      const newMessage = {
+        messages: [...user.messages, { id: Date.now(), message: messageContent }]
+      }
+      const updatedUsers = users.map(user => 
+        user.id === userId ? { ...user, messages: newMessage.messages } : user
+      );
+      setUsers(updatedUsers);
+      setInputValue('');
+    };
+
+    socket.current.on('messageFromUser', handleMessageFromUser);
 
     return () => {
-      socket.current.disconnect();
+      socket.current.off('messageFromUser', handleMessageFromUser);
     };
-    // socket.current.on('connect', () => {
-    //   console.log('Connected to WebSocket server!');
-    // });
-    // const roomId = "766314052904943647";
-    // socket.emit('joinRoom', roomId);
-    // console.log(`Joining room ${roomId}`);
+  }, [users]);
 
-    // socket.current.on('messageFromUser', (messageObj) => {
-    //     const userId = messageObj.serId;
-    //     const messageContent = messageObj.message
-    //     addMessage(userId, messageContent);
-    //   });
+  // useEffect(() => {
 
+  //   // return () => {
+  //   //   socket.current.disconnect();
+  //   // };
 
-  }, []);
+  //   socket.current.on('messageFromUser', (messageObj) => {
+  //     const userId = messageObj.userId;
+  //     const messageContent = messageObj.message;
+  //     console.log(userId,messageContent);
+      
+  //     const newMessage = {
+  //       messages: [...users.find(user => user.id === userId).messages, { id: Date.now(), message: messageContent }]
+  //     }
+  //     const updatedUsers = users.map(user => 
+  //       user.id === userId ? { ...user, messages: newMessage.messages } : user
+  //     );
+  //     console.log(updatedUsers);
+  //     setUsers(updatedUsers);
+  //     setInputValue('');
+
+  //     console.log(123456);
+  //   });
+
+  // }, [users]);
 
   return (
     <>
