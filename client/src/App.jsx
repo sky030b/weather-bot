@@ -42,6 +42,14 @@ function App() {
     );
     setUsers(updatedUsers);
     setInputValue('');
+
+    // 新增：將消息發送到 WebSocket
+    const messageObj = {
+      roomId: userId,
+      message: messageContent,
+    };
+    socket.current.emit('sendMessageToUser', messageObj);
+
   }
 
   const userNames = users.map((input) => {
@@ -92,7 +100,6 @@ function App() {
     if (!socket.current) return;
 
     const handleMessageFromUser = (messageObj) => {
-      console.log(messageObj);
       const userId = messageObj.userId;
       const messageContent = messageObj.message;
 
