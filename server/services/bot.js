@@ -1,6 +1,7 @@
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const socket = require('socket.io');
 const { fetchWeatherData, analyzeMessageReturnWeather } = require('./weather');
+const schedule = require('node-schedule');
 
 /* 
 Discord
@@ -40,6 +41,28 @@ client.on('messageCreate', async (message) => {
   console.log(message.author)
   if (!message.guild &&  message.author.bot === false) {
     console.log(userId, message);
+    if (message.content.startsWith('!schedule')) {
+      const [command, dateStr, ...msgParts] = message.content.split(' ');
+      const messageContent = msgParts.join(' ');
+  
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        message.reply('Invalid date format. Please use a valid date.');
+        return;
+      }
+  
+      const userId = message.author.id;
+  
+      // Schedule the message
+      if (scheduledJobs[userId]) {
+        scheduledJobs[userId].cancel(); // Cancel the previous job if it exists
+      }
+  
+      scheduledJobs[userId] = schedule.scheduleJob(date, () => {
+        sendScheduledMessage(userId, messageContent);
+      });
+    }
+
     if (!messages[userId]) {
       messages[userId] = [{bot: false, message: message.content}];
     } else {
@@ -48,8 +71,9 @@ client.on('messageCreate', async (message) => {
     const botResponse =  analyzeMessageReturnWeather(message.content);
     sendMessageToDiscord(userId, botResponse)
     sendMessageToWebSocket(userId, message.content, message.author.globalName);
+    
   } else{
-
+    message.reply('DM me!')
   }
   console.log(messages);
 });
@@ -62,6 +86,20 @@ async function sendMessageToDiscord(userId, messageContent) {
       console.log(`Sent message to user ${userId}: ${messageContent}`);
       messages[userId].push({bot:true, message:messageContent})
       console.log(messages);
+    } else {
+      console.error(`User ${userId} not found`);
+    }
+  } catch (error) {
+    console.error(`Failed to send message to user ${userId}:`, error);
+  }
+}
+
+async function sendScheduledMessage(userId, messageContent) {
+  try {
+    const user = await client.users.fetch(userId);
+    if (user) {
+      await user.send(messageContent);
+      console.log(`Sent message to user ${userId}: ${messageContent}`);
     } else {
       console.error(`User ${userId} not found`);
     }
