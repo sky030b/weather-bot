@@ -1,8 +1,9 @@
 const express = require('express');
 const http = require('http');
+const path = require('path');
+require('dotenv').config();
 const { setupWebSocket } = require('./services/bot.js');
 // const { setupWebSocket } = require('./services/bot-backup.js');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);

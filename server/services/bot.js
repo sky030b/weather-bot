@@ -1,6 +1,6 @@
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const socket = require('socket.io');
-require('dotenv').config();
+const { fetchWeatherData, analyzeMessageReturnWeather } = require('./weather');
 
 /* 
 Discord
@@ -45,6 +45,8 @@ client.on('messageCreate', async (message) => {
     } else {
       messages[userId].push({bot: false, message: message.content});
     }
+    const botResponse =  analyzeMessageReturnWeather(message.content);
+    sendMessageToDiscord(userId, botResponse)
     sendMessageToWebSocket(userId, message.content, message.author.globalName);
   } else{
 
