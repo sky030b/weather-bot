@@ -43,11 +43,11 @@ function scheduleMessage(datetime, userId, username) {
   const [dateStr, timeStr] = datetime.split(' ');
   const [year, month, day] = dateStr.split('-');
   const [hours, minutes] = timeStr.split(':');
-  
+
   // Month in JavaScript Date starts from 0, so subtract 1
   const targetDate = new Date(year, month - 1, day, hours, minutes);
   console.log(targetDate);
-  
+
   schedule.scheduleJob(targetDate, async () => {
     console.log('GOOOOOOOOOOOOOOOO')
     // Send the scheduled message
@@ -59,10 +59,11 @@ function scheduleMessage(datetime, userId, username) {
 
 client.on('messageCreate', async (message) => {
   const userId = message.author.id;
-  if (!message.guild &&  message.author.bot === false) {
-    await addUserToDB(message.author.id, message.author.globalName)
-    await saveMessageToDB(userId, message.author.globalName, false, message.content)
+  if (!message.guild && message.author.bot === false) {
+    await addUserToDB(message.author.id, message.author.globalName);
+    await saveMessageToDB(userId, message.author.globalName, false, message.content);
     console.log(userId, message.author.globalName, message.content);
+    sendMessageToWebSocket(userId, message.content, message.author.globalName);
     if (message.content.startsWith('!schedule')) {
       const [command, date, time, ...otherThings] = message.content.split(' ');
       const datetime = `${date} ${time}`;
@@ -71,26 +72,26 @@ client.on('messageCreate', async (message) => {
       if (isNaN(targetDate.getTime())) {
         message.reply('Invalid date format. Please use a valid date.');
         return;
-      } else{
+      } else {
         scheduleMessage(datetime, userId, message.author.globalName);
         message.reply(`OK! I will tell you the temperature right on ${formattedTime}`)
         return
       }
-    } else{
+    } else {
       // sendMessageToWebSocket(userId, message.content, message.author.globalName);
-      const botResponse =  analyzeMessageReturnWeather(message.content);
+      const botResponse = analyzeMessageReturnWeather(message.content);
       console.log(botResponse)
-      if(botResponse === 'no match'){
+      if (botResponse === 'no match') {
         sendMessageToDiscord(userId, 'I do not understand. Try key word like 天氣 , 溫度 or sort of ;) ')
         // sendMessageToWebSocket(userId, botResponse, message.author.globalName, isBot = true)
-        return 
+        return
       }
       sendMessageToDiscord(userId, botResponse);
       // sendMessageToWebSocket(userId, botResponse, message.author.globalName, isBot = true)
     }
-    
-    
-  } else{
+
+
+  } else {
     // message.send('DM me!')
   }
   // console.log(messages);
@@ -162,12 +163,12 @@ function sendMessageToWebSocket(roomId, message, username, isBot = false) {
     username ${username}, isBot ${isBot}, message content:
     "${message}"
     `)
-    if(isBot === false){
-      io.to(roomId).emit('messageFromUser', { message, userId:roomId, username, isBot });
-    }else{
-      io.to(roomId).emit('messageFromUser', { message, userId:botId, username:'weather-bot', isBot });
+    if (isBot === false) {
+      io.to(roomId).emit('messageFromUser', { message, userId: roomId, username, isBot });
+    } else {
+      io.to(roomId).emit('messageFromUser', { message, userId: botId, username: 'weather-bot', isBot });
     }
-    
+
   } else {
     console.error('WebSocket server not initialized.');
   }
