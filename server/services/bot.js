@@ -29,6 +29,8 @@ client.on('ready', () => {
 // Temporary structure 
 // {id1:[{bot: false, message: "Hey"}], id2:[{bot: false, message: "Hi"}]}
 const messages = {};
+// Anyway it is public info...
+const botId = '1246056144028303514';
 
 client.on('guildMemberAdd', (member) => {
   const user = member.user;
@@ -96,15 +98,19 @@ client.on('messageCreate', async (message) => {
 
 async function sendMessageToDiscord(userId, messageContent) {
   try {
+    console.log(`
+    Sending message to Discord:
+    userId ${userId} message "${messageContent}"
+    `)
     const user = await client.users.fetch(userId);
     if (user) {
       await user.send(messageContent);
       sendMessageToWebSocket(userId, messageContent, 'weather-bot', true)
       // console.log(`Sent message to user ${userId}: ${messageContent}`);
-      messages[userId].push({isBot:true, message:messageContent})
+      // messages[userId].push({isBot:true, message:messageContent})
       //console.log(messages);
-      await addUserToDB(userId, 'weather-bot')
-      await saveMessageToDB(userId, 'weather-bot', false, messageContent)
+      await addUserToDB(botId, 'weather-bot')
+      await saveMessageToDB(userId, 'weather-bot', true, messageContent)
     } else {
       console.error(`User ${userId} not found`);
     }
@@ -132,10 +138,10 @@ function setupWebSocket(server) {
       console.log(`後台管理員登入 room: ${roomId}`);
     });
 
-    socket.on('sendMessageToUser', ({ roomId, message }) => {
+    socket.on('sendMessageToUser', async ({ roomId, message }) => {
       console.log(roomId, message);
       if (roomId) {
-        sendMessageToDiscord(roomId, message); // Send DM to the user
+        await sendMessageToDiscord(roomId, message); // Send DM to the user
       }
     });
 
@@ -151,7 +157,17 @@ function setupWebSocket(server) {
 
 function sendMessageToWebSocket(roomId, message, username, isBot = false) {
   if (io) {
-    io.to(roomId).emit('messageFromUser', { message, userId:roomId, username, isBot });
+    console.log(`
+    Sending message to websocket: roomId ${roomId},
+    username ${username}, isBot ${isBot}, message content:
+    "${message}"
+    `)
+    if(isBot === false){
+      io.to(roomId).emit('messageFromUser', { message, userId:roomId, username, isBot });
+    }else{
+      io.to(roomId).emit('messageFromUser', { message, userId:botId, username:'weather-bot', isBot });
+    }
+    
   } else {
     console.error('WebSocket server not initialized.');
   }
