@@ -9,16 +9,6 @@ function App() {
   const socket = useRef(null);
 
   function addMessage(userId, messageContent) {
-    const newMessage = {
-      messages: [...users.find(user => user.id === userId).messages, { id: Date.now(), message: messageContent }]
-    }
-    const updatedUsers = users.map(user => 
-      user.id === userId ? { ...user, messages: newMessage.messages } : user
-    );
-    setUsers(updatedUsers);
-    setInputValue('');
-
-    // 新增：將消息發送到 WebSocket
     const messageObj = {
       roomId: userId,
       message: messageContent,
