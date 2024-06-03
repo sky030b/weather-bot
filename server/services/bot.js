@@ -132,10 +132,10 @@ function setupWebSocket(server) {
       console.log(`後台管理員登入 room: ${roomId}`);
     });
 
-    socket.on('sendMessageToUser', ({ roomId, message }) => {
+    socket.on('sendMessageToUser', async ({ roomId, message }) => {
       console.log(roomId, message);
       if (roomId) {
-        sendMessageToDiscord(roomId, message); // Send DM to the user
+        await sendMessageToDiscord(roomId, message); // Send DM to the user
       }
     });
 
@@ -151,6 +151,11 @@ function setupWebSocket(server) {
 
 function sendMessageToWebSocket(roomId, message, username, isBot = false) {
   if (io) {
+    console.log(`
+    Sending message to websocket: roomId ${roomId},
+    username ${username}, isBot ${isBot}, message content:
+    "${message}"
+    `)
     io.to(roomId).emit('messageFromUser', { message, userId:roomId, username, isBot });
   } else {
     console.error('WebSocket server not initialized.');
