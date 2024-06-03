@@ -29,6 +29,8 @@ client.on('ready', () => {
 // Temporary structure 
 // {id1:[{bot: false, message: "Hey"}], id2:[{bot: false, message: "Hi"}]}
 const messages = {};
+// Anyway it is public info...
+const botId = '1246056144028303514';
 
 client.on('guildMemberAdd', (member) => {
   const user = member.user;
@@ -96,15 +98,19 @@ client.on('messageCreate', async (message) => {
 
 async function sendMessageToDiscord(userId, messageContent) {
   try {
+    console.log(`
+    Sending message to Discord:
+    userId ${userId} message "${messageContent}"
+    `)
     const user = await client.users.fetch(userId);
     if (user) {
       await user.send(messageContent);
       sendMessageToWebSocket(userId, messageContent, 'weather-bot', true)
       // console.log(`Sent message to user ${userId}: ${messageContent}`);
-      messages[userId].push({isBot:true, message:messageContent})
+      // messages[userId].push({isBot:true, message:messageContent})
       //console.log(messages);
-      await addUserToDB(userId, 'weather-bot')
-      await saveMessageToDB(userId, 'weather-bot', false, messageContent)
+      await addUserToDB(botId, 'weather-bot')
+      await saveMessageToDB(userId, 'weather-bot', true, messageContent)
     } else {
       console.error(`User ${userId} not found`);
     }
@@ -156,7 +162,12 @@ function sendMessageToWebSocket(roomId, message, username, isBot = false) {
     username ${username}, isBot ${isBot}, message content:
     "${message}"
     `)
-    io.to(roomId).emit('messageFromUser', { message, userId:roomId, username, isBot });
+    if(isBot === false){
+      io.to(roomId).emit('messageFromUser', { message, userId:roomId, username, isBot });
+    }else{
+      io.to(roomId).emit('messageFromUser', { message, userId:botId, username:'weather-bot', isBot });
+    }
+    
   } else {
     console.error('WebSocket server not initialized.');
   }
