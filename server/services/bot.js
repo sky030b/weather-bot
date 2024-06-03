@@ -37,8 +37,6 @@ client.on('guildMemberAdd', (member) => {
 });
 
 function scheduleMessage(datetime, userId, username) {
-  // '*/5 * * * *'
-  //schedule.scheduleJob(datetime, async () => {
   const [dateStr, timeStr] = datetime.split(' ');
   const [year, month, day] = dateStr.split('-');
   const [hours, minutes] = timeStr.split(':');
@@ -50,7 +48,9 @@ function scheduleMessage(datetime, userId, username) {
   schedule.scheduleJob(targetDate, async () => {
     console.log('GOOOOOOOOOOOOOOOO')
     // Send the scheduled message
-    const temperatureNow = analyzeMessageReturnWeather('temperature')
+    const weatherString = analyzeMessageReturnWeather('temperature')
+    const forecastDate = weatherString.split(' ')[0]
+
     const messageContent = `親愛可愛的 ${username} 您好! \n 現在天氣如下 ${temperatureNow}`
     await sendMessageToDiscord(userId, messageContent)
   });
@@ -79,9 +79,14 @@ client.on('messageCreate', async (message) => {
     } else {
       messages[userId].push({bot: false, message: message.content});
     }
-    const botResponse =  analyzeMessageReturnWeather(message.content);
-    sendMessageToDiscord(userId, botResponse)
     sendMessageToWebSocket(userId, message.content, message.author.globalName);
+    const botResponse =  analyzeMessageReturnWeather(message.content);
+    console.log(botResponse)
+    if(botResponse === 'no match'){
+      sendMessageToDiscord(userId, 'I do not understand. Try key word like 天氣 , 溫度 or sort of ;) ')
+      return 
+    }
+    sendMessageToDiscord(userId, botResponse);
     
   } else{
     // message.send('DM me!')
@@ -94,7 +99,7 @@ async function sendMessageToDiscord(userId, messageContent) {
     const user = await client.users.fetch(userId);
     if (user) {
       await user.send(messageContent);
-      sendMessageToWebSocket(userId, messageContent, 'Weather bot')
+      sendMessageToWebSocket(userId, messageContent, 'weather-bot')
       // console.log(`Sent message to user ${userId}: ${messageContent}`);
       messages[userId].push({bot:true, message:messageContent})
       //console.log(messages);
