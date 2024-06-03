@@ -40,17 +40,19 @@ function getPeriodTime(description) {
 
   const timePeriods = [
     { label: '晚上', start: 21, end: 24 },
-    { label: '夜晚', start: 18, end: 21 },
+    { label: '夜晚', start: 21, end: 24 },
     { label: '黃昏', start: 18, end: 21 },
     { label: '傍晚', start: 15, end: 18 },
-    { label: '下午', start: 12, end: 15 },
+    { label: '下午', start: 15, end: 18 },
     { label: '中午', start: 12, end: 15 },
     { label: '早上', start: 9, end: 12 },
     { label: '上午', start: 9, end: 12 },
     { label: '早晨', start: 6, end: 9 },
     { label: '清晨', start: 3, end: 6 },
+    { label: '凌晨', start: 3, end: 6 },
     { label: '深夜', start: 0, end: 3 },
-    { label: '凌晨', start: 0, end: 3 }
+    { label: '半夜', start: 0, end: 3 },
+    { label: '午夜', start: 0, end: 3 }
   ];
 
   let period = timePeriods.find(period => description.includes(period.label));
@@ -94,19 +96,35 @@ function parseWeatherDescription(description) {
   return weatherInfo;
 }
 
+function hasKeywords(description) {
+  const keywords = [
+    "天氣", "氣象", "降雨", "機率", "溫度", "氣溫", "覺得", "體感", "風", "濕度", "完整",
+    "晚上", "夜晚", "黃昏", "傍晚", "下午", "中午", "早上", "上午", "早晨", "清晨", "深夜",
+    "凌晨", "半夜", "午夜", "現在", "即時", "明天", "後天"
+  ];
+  return keywords.some(keyword => description.includes(keyword));
+}
 
-function getReply(time = getNowTime(), attributes = ["weather", "rainProbability", "temperature", "feeling", "wind", "humidity"]) {
+
+function getReply(description) {
+  if (!hasKeywords(description)) {
+    return "no match";
+  }
+
+  let periodTime = getPeriodTime(description);
+  const attributes = getReplyAttr(description);
+
   let reply = "";
-  if (time < getNowTime()) {
+  if (periodTime < getNowTime()) {
     reply += "無法查詢過去記錄，故提供即時記錄。\n\n";
-    time = getNowTime();
+    periodTime = getNowTime();
   };
 
-  const result = weatherData.find(item => item.endTime > time);
+  const result = weatherData.find(item => item.endTime > periodTime);
   if (!result) return "無法找到符合條件的天氣資料，故提供完整的即時記錄。\n\n";
 
   const weatherInfo = parseWeatherDescription(result.elementValue[0].value);
-  reply += `${time.slice(0, 19)}:\n`;
+  reply += `${periodTime.slice(0, 19)}:\n`;
 
   attributes.forEach(attr => {
     if (weatherInfo[attr]) reply += `${weatherInfo[attr]}\n`;
@@ -121,10 +139,10 @@ async function init() {
 
 init();
 
+// async function analyzeMessageReturnWeather(description) {
 function analyzeMessageReturnWeather(description) {
-  const periodTime = getPeriodTime(description);
-  const attributes = getReplyAttr(description);
-  return getReply(periodTime, attributes);
+  // await fetchWeatherData();
+  return getReply(description);
 }
 
 module.exports = { fetchWeatherData, analyzeMessageReturnWeather };
