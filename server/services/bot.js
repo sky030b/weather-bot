@@ -48,10 +48,13 @@ function scheduleMessage(datetime, userId, username) {
   schedule.scheduleJob(targetDate, async () => {
     console.log('GOOOOOOOOOOOOOOOO')
     // Send the scheduled message
-    const weatherString = analyzeMessageReturnWeather('temperature')
+    const weatherString = analyzeMessageReturnWeather('溫度')
     const forecastDate = weatherString.split(' ')[0]
-
-    const messageContent = `親愛可愛的 ${username} 您好! \n 現在天氣如下 ${temperatureNow}`
+    const forecastContent = weatherString.slice(weatherString.indexOf(' '));
+    console.log(weatherString)
+    console.log(forecastDate)
+    console.log(forecastContent)
+    const messageContent = `親愛可愛的 ${username} 您好! \n 現在天氣(${forecastDate})如下 ${forecastContent}`
     await sendMessageToDiscord(userId, messageContent)
   });
 }
@@ -69,7 +72,7 @@ client.on('messageCreate', async (message) => {
         return;
       } else{
         scheduleMessage(datetime, userId, message.author.globalName);
-        message.reply(`OK! I will tell you the temperature right at ${testTime.toLocaleString('en-US')}`)
+        message.reply(`OK! I will tell you the temperature right at ${testTime}`)
       }
       
       return
@@ -99,9 +102,9 @@ async function sendMessageToDiscord(userId, messageContent) {
     const user = await client.users.fetch(userId);
     if (user) {
       await user.send(messageContent);
-      sendMessageToWebSocket(userId, messageContent, 'weather-bot')
+      sendMessageToWebSocket(userId, messageContent, 'weather-bot', true)
       // console.log(`Sent message to user ${userId}: ${messageContent}`);
-      messages[userId].push({bot:true, message:messageContent})
+      messages[userId].push({isBot:true, message:messageContent})
       //console.log(messages);
     } else {
       console.error(`User ${userId} not found`);
@@ -146,9 +149,9 @@ function setupWebSocket(server) {
   });
 }
 
-function sendMessageToWebSocket(roomId, message, username) {
+function sendMessageToWebSocket(roomId, message, username, isBot = false) {
   if (io) {
-    io.to(roomId).emit('messageFromUser', { message, userId:roomId, username });
+    io.to(roomId).emit('messageFromUser', { message, userId:roomId, username, isBot });
   } else {
     console.error('WebSocket server not initialized.');
   }
