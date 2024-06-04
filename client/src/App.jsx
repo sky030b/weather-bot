@@ -51,7 +51,7 @@ function App() {
         }
       });
 
-    socket.current = io('http://54.252.146.153/');
+    socket.current = io();
     socket.current.on('connect', () => {
       console.log('Connected to WebSocket server!');
     });
