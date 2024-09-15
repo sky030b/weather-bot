@@ -106,10 +106,12 @@ function hasKeywords(description) {
 }
 
 
-function getReply(description) {
+async function getReply(description) {
   if (!hasKeywords(description)) {
     return "no match";
   }
+
+  await fetchWeatherData();
 
   let periodTime = getPeriodTime(description);
   const attributes = getReplyAttr(description);
@@ -140,9 +142,9 @@ function getReply(description) {
 // init();
 
 async function analyzeMessageReturnWeather(description) {
-// function analyzeMessageReturnWeather(description) {
-  await fetchWeatherData();
-  return getReply(description);
+  // function analyzeMessageReturnWeather(description) {
+  // await fetchWeatherData();
+  return await getReply(description);
 }
 
 module.exports = { fetchWeatherData, analyzeMessageReturnWeather };
