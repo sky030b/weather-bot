@@ -133,15 +133,15 @@ function getReply(description) {
   return reply.trim();
 }
 
-async function init() {
-  await fetchWeatherData(locationName);
-}
+// async function init() {
+//   await fetchWeatherData(locationName);
+// }
 
-init();
+// init();
 
-// async function analyzeMessageReturnWeather(description) {
-function analyzeMessageReturnWeather(description) {
-  // await fetchWeatherData();
+async function analyzeMessageReturnWeather(description) {
+// function analyzeMessageReturnWeather(description) {
+  await fetchWeatherData();
   return getReply(description);
 }
 

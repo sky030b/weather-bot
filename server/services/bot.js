@@ -51,7 +51,7 @@ function scheduleMessage(datetime, userId, username) {
   schedule.scheduleJob(targetDate, async () => {
     console.log('GOOOOOOOOOOOOOOOO')
     // Send the scheduled message
-    const weatherString = analyzeMessageReturnWeather('溫度')
+    const weatherString = await analyzeMessageReturnWeather('溫度')
     const messageContent = `親愛可愛的 ${username} 你好! \n ${weatherString}`
     await sendMessageToDiscord(userId, messageContent)
   });
@@ -78,7 +78,7 @@ client.on('messageCreate', async (message) => {
         return
       }
     } else {
-      const botResponse =  analyzeMessageReturnWeather(message.content);
+      const botResponse = await analyzeMessageReturnWeather(message.content);
       console.log(botResponse)
       if (botResponse === 'no match') {
         sendMessageToDiscord(userId, 'I do not understand. Try key word like 天氣 , 溫度 or sort of ;) ')
