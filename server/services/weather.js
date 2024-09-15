@@ -113,10 +113,9 @@ async function getReply(description) {
 
   await fetchWeatherData();
 
-  let periodTime = getPeriodTime(description);
-  const attributes = getReplyAttr(description);
-
   let reply = "";
+  
+  let periodTime = getPeriodTime(description);
   if (periodTime < getNowTime()) {
     reply += "無法查詢過去記錄，故提供即時記錄。\n\n";
     periodTime = getNowTime();
@@ -128,6 +127,7 @@ async function getReply(description) {
   const weatherInfo = parseWeatherDescription(result.elementValue[0].value);
   reply += `${periodTime.slice(0, 19)}:\n`;
 
+  const attributes = getReplyAttr(description);
   attributes.forEach(attr => {
     if (weatherInfo[attr]) reply += `${weatherInfo[attr]}\n`;
   });
