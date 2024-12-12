@@ -7,23 +7,23 @@ const taiwanOffset = 8 * 60 * 60 * 1000;
 const oneDayOffset = 24 * 60 * 60 * 1000;
 
 let weatherData;
-async function fetchWeatherData(locationName = '臺北市') {
+async function fetchWeatherData(LocationName = '臺北市') {
   try {
     const response = await axios.get(process.env.API_URL, {
       params: {
         Authorization: process.env.API_TOKEN,
-        locationName,
-        elementName: process.env.ELEMENT_NAME
+        LocationName,
+        ElementName: process.env.ELEMENT_NAME
       }
     });
-    weatherData = response.data.records.locations[0].location[0].weatherElement[0].time;
+    weatherData = response.data.records.Locations[0].Location[0].WeatherElement[0].Time;
   } catch (error) {
     console.error("Error fetching weather data:", error);
   }
 }
 
 function getNowTime() {
-  return new Date(Date.now() + taiwanOffset).toISOString().slice(0, 19).replace("T", " ");
+  return new Date(Date.now() + taiwanOffset).toISOString().slice(0, 19);
 }
 
 function getPeriodTime(description) {
@@ -64,7 +64,7 @@ function getPeriodTime(description) {
   }
 
   const hour = String(period.start).padStart(2, '0');
-  const fullPeriodTime = `${targetDate} ${hour}:00:00`;
+  const fullPeriodTime = `${targetDate}T${hour}:00:00`;
 
   return fullPeriodTime;
 }
@@ -114,17 +114,17 @@ async function getReply(description) {
   await fetchWeatherData();
 
   let reply = "";
-  
+
   let periodTime = getPeriodTime(description);
   if (periodTime < getNowTime()) {
     reply += "無法查詢過去記錄，故提供即時記錄。\n\n";
     periodTime = getNowTime();
   };
 
-  const result = weatherData.find(item => item.endTime > periodTime);
+  const result = weatherData.find(item => item.EndTime.replace('+08:00', '') > periodTime);
   if (!result) return "無法找到符合條件的天氣資料，故提供完整的即時記錄。\n\n";
 
-  const weatherInfo = parseWeatherDescription(result.elementValue[0].value);
+  const weatherInfo = parseWeatherDescription(result.ElementValue[0].WeatherDescription);
   reply += `${periodTime.slice(0, 19)}:\n`;
 
   const attributes = getReplyAttr(description);
